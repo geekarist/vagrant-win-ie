@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
     # utilisée
     config.vm.provider "virtualbox" do |vb|
         # Afficher l'interface graphique Windows
-        vb.gui = true
+        vb.gui = false
         # Mémoire vive
         vb.memory = "1024"
     end

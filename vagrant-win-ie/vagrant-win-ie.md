@@ -32,6 +32,7 @@ Nous allons voir comment personnaliser une box pour corriger ces problèmes, et 
 - Vagrant 1.7
 - Un gestionnaire de téléchargement, par exemple la commande `wget`
 - Quelques heures de patience pour télécharger les VM
+- Le client Microsoft Remote Desktop
 
 ## Personnalisation
 
@@ -83,15 +84,30 @@ Premier lancement :
 vagrant up
 ```
 
+TODO capture d'écran
+TODO message de timeout
+TODO choisir 'home network'
+
 La VM n'est pas encore configurée pour autoriser l'accès par rdp, ce qui cause un timeout (quelle que soit la durée configurée). Pourtant elle est démarrée et utilisable, puisque nous voyons l'interface graphique de Windows.
 
 La VM n'est pas non plus manipulable avec les commandes Vagrant : `vagrant halt`, `vagrant reload`, etc.
 
-Pour régler ça, dans la VM ouvrez le répertoire `\\VBOXSVR\vagrant`, copiez `setup-winrm.bat` sur le bureau, et lancez le script en tant qu'administrateur. Eteignez la VM depuis le système invité (pour l'instant `vagrant reload` est encore impossible).
+Pour régler ça, dans la VM ouvrez le répertoire `\\VBOXSVR\vagrant`, copiez `setup-winrm.bat` sur le bureau, et lancez le script en tant qu'administrateur.
 
-TODO expliquer le script bat.
+TODO lancer les commandes :
 
-Passez `vb.gui` à `false`, pour laisser tourner la VM en _headless_, et le timeout à 5 minutes, pour lui laisser le temps de démarrer (sur mon poste, elle prend 2-3 minutes) :
+```
+powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
+powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
+```
+
+Eteignez la VM depuis le système invité (pour l'instant `vagrant reload` est encore impossible).
+
+TODO vagrant reload Ok ?
+
+TODO expliquer le script bat. Voir http://docs.vagrantup.com/v2/vagrantfile/winrm_settings.html.
+
+Passez `vb.gui` à `false`, pour lancer la VM en _headless_, et le timeout à 5 minutes, pour lui laisser le temps de démarrer (sur mon poste, elle prend 2-3 minutes) :
 
 ```ruby
 [...]
@@ -118,6 +134,8 @@ vagrant rdp
 
 ## Distribution
 
+TODO : repackaging mise à disposition de la box
+
 Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
 
 ```bash
@@ -135,4 +153,6 @@ Allez dans le nouveau répertoire, et faites un `vagrant up` pour lancer la VM. 
 
 La VM peut maintenant être manipulée avec Vagrant : `vagrant halt`, `vagrant reload`, etc.
 
-Vous pouvez vous y connecter avec un `vagrant rdp`, ou à distance avec le client _remote desktop_ de Microsoft.
+Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance avec le client _remote desktop_ de Microsoft.
+
+TODO : RD client sur iPad.
