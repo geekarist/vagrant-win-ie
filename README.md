@@ -2,20 +2,16 @@
 
 Vagrant est un système de gestion de machines virtuelles qui permet de créer une VM, et de vous y connecter, en quelques lignes de commandes. Par exemple pour la dernière version d'Ubuntu :
 
-```bash
-vagrant init ubuntu/trusty64
-vagrant up
-vagrant ssh
-```
+    vagrant init ubuntu/trusty64
+    vagrant up
+    vagrant ssh
 
 D'autres VM avec plusieurs versions de Windows et d'IE ont été mises à disposition par Microsoft pour les développeurs Web, et on peut théoriquement les utiliser aussi facilement :
 
-```bash
-vagrant box add win7-ie11 http://aka.ms/vagrant-win7-ie11
-vagrant init win7-ie11
-vagrant up
-vagrant rdp
-```
+    vagrant box add win7-ie11 http://aka.ms/vagrant-win7-ie11
+    vagrant init win7-ie11
+    vagrant up
+    vagrant rdp
 
 En pratique c'est plus compliqué :
 
@@ -36,56 +32,48 @@ Nous allons voir comment personnaliser une box pour corriger ces problèmes, et 
 
 ## Personnalisation
 
-Téléchargez la box Vagrant :
-
-```bash
-wget -c http://aka.ms/vagrant-win7-ie11
-```
+Téléchargez la box Vagrant : `wget -c http://aka.ms/vagrant-win7-ie11`
 
 La commande `wget -c` peut être relancée pour reprendre le téléchargement en cas d'interruption. C'est très long.
 
 Créez votre fichier Vagrantfile :
 
-```ruby
-Vagrant.configure(2) do |config|
-    config.winrm.username = "IEUser"
-    config.winrm.password = "Passw0rd!"
-    config.vm.guest = :windows
-    # Configuration de winrm qui rend la VM scriptable depuis
-    # l'extérieur.
-    config.vm.communicator = "winrm"
-    # Ouverture du port réseau de winrm
-    config.vm.network :forwarded_port, guest: 5985, host: 59851,
-        id: "winrm", auto_correct:true
-    # Ouverture du port du remote desktop protocol
-    config.vm.network :forwarded_port, guest: 3389, host: 33891,
-        id: "rdp", auto_correct:true
-    # Chemin de la box qui sera importée au premier démarrage
-    config.vm.box_url = "file://vagrant-win7-ie11"
-    # Timeout rapide au premier démarrage
-    config.vm.boot_timeout = 30
-    # Nom de la box
-    config.vm.box = "win7-ie11"
+    Vagrant.configure(2) do |config|
+        config.winrm.username = "IEUser"
+        config.winrm.password = "Passw0rd!"
+        config.vm.guest = :windows
+        # Configuration de winrm qui rend la VM scriptable depuis
+        # l'extérieur.
+        config.vm.communicator = "winrm"
+        # Ouverture du port réseau de winrm
+        config.vm.network :forwarded_port, guest: 5985, host: 59851,
+            id: "winrm", auto_correct:true
+        # Ouverture du port du remote desktop protocol
+        config.vm.network :forwarded_port, guest: 3389, host: 33891,
+            id: "rdp", auto_correct:true
+        # Chemin de la box qui sera importée au premier démarrage
+        config.vm.box_url = "file://vagrant-win7-ie11"
+        # Timeout rapide au premier démarrage
+        config.vm.boot_timeout = 30
+        # Nom de la box
+        config.vm.box = "win7-ie11"
 
-    # Configuration spécifique à la techno de virtualisation
-    # utilisée
-    config.vm.provider "virtualbox" do |vb|
-        # Afficher l'interface graphique Windows
-        vb.gui = true
-        # Mémoire vive
-        vb.memory = "1024"
+        # Configuration spécifique à la techno de virtualisation
+        # utilisée
+        config.vm.provider "virtualbox" do |vb|
+            # Afficher l'interface graphique Windows
+            vb.gui = true
+            # Mémoire vive
+            vb.memory = "1024"
+        end
     end
-end
-```
 
-Premier lancement :
-
-```bash
-vagrant up
-```
+Premier lancement : `vagrant up`
 
 TODO capture d'écran
+
 TODO message de timeout
+
 TODO choisir 'home network'
 
 La VM n'est pas encore configurée pour autoriser l'accès par rdp, ce qui cause un timeout (quelle que soit la durée configurée). Pourtant elle est démarrée et utilisable, puisque nous voyons l'interface graphique de Windows.
@@ -96,10 +84,8 @@ Pour régler ça, dans la VM ouvrez le répertoire `\\VBOXSVR\vagrant`, copiez `
 
 TODO lancer les commandes :
 
-```
-powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
-powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
-```
+    powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
+    powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
 
 Eteignez la VM depuis le système invité (pour l'instant `vagrant reload` est encore impossible).
 
@@ -109,28 +95,20 @@ TODO expliquer le script bat. Voir http://docs.vagrantup.com/v2/vagrantfile/winr
 
 Passez `vb.gui` à `false`, pour lancer la VM en _headless_, et le timeout à 5 minutes, pour lui laisser le temps de démarrer (sur mon poste, elle prend 2-3 minutes) :
 
-```ruby
-[...]
-# Timeout suffisant pour le démarrage de Windows
-config.vm.boot_timeout = 300
+    [...]
+    # Timeout suffisant pour le démarrage de Windows
+    config.vm.boot_timeout = 300
 
-# Configuration spécifique à la techno de
-# virtualisation utilisée
-config.vm.provider "virtualbox" do |vb|
-    # Afficher l'interface graphique Windows
-    vb.gui = false
-[...]
-```
+    # Configuration spécifique à la techno de
+    # virtualisation utilisée
+    config.vm.provider "virtualbox" do |vb|
+        # Afficher l'interface graphique Windows
+        vb.gui = false
+    [...]
 
 Refaites un `vagrant up` pour tester le démarrage de la VM. Il ne doit pas y avoir de timeout :
 
-```
-TODO
-```
-
-```
-vagrant rdp
-```
+TODO : `vagrant rdp`
 
 ## Distribution
 
@@ -138,12 +116,10 @@ TODO : repackaging mise à disposition de la box
 
 Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
 
-```bash
-git init
-git remote add http://github.com/geekarist/vagrant-ie.git
-git commit -a -m 'Initial version: custom IE VM'
-git push
-```
+    git init
+    git remote add http://github.com/geekarist/vagrant-ie.git
+    git commit -a -m 'Initial version: custom IE VM'
+    git push
 
 ## Utilisation
 
