@@ -13,15 +13,13 @@ D'autres VM avec plusieurs versions de Windows et d'IE ont été mises à dispos
     vagrant up
     vagrant rdp
 
-En pratique c'est plus compliqué : TODO reformuler
+En pratique c'est plus compliqué, car aucun accès à distance n'est configuré par défaut. Pas de SSH, et pas de RDP (le protocole de Microsoft).
 
-- Ces VM n'ont pas d'installation de ssh, et aucun accès à distance n'est configuré par défaut
+- Le premier symptôme est un timeout, au moment où Vagrant essaie de se connecter à la VM pour vérifier qu'elle est bien démarrée.
 
-- Le premier symptôme est un timeout, au moment où Vagrant essaie de se connecter à la VM, quand il vérifie qu'elle est bien démarrée
+- On ne peut pas non plus manipuler notre VM avec Vagrant, pour éteindre la VM ou pour la redémarrer.
 
-- Impossible de manipuler notre VM avec Vagrant, pour éteindre la VM ou pour la redémarrer
-
-Nous allons voir comment personnaliser une box pour corriger ces problèmes, et comment la redistribuer à votre équipe dans une version qu'ils pourront installer en deux lignes de commande.
+Nous allons voir comment personnaliser une box Microsoft pour corriger ces problèmes.
 
 ## Pré-requis
 
@@ -70,30 +68,42 @@ Créez votre fichier Vagrantfile :
         end
     end
 
-Premier lancement : `vagrant up`
+### Premier lancement
 
-TODO capture d'écran
+Lancez la commande `vagrant up` :
 
-TODO message de timeout
+        TODO verbatim
 
-TODO choisir 'home network'
+Vagrant affiche un message de timeout. Pas la peine d'augmenter la valeur dans le Vagrantfile, car il utilise WinRM pour accéder à la machine, et ce n'est pas encore autorisé :
 
-La VM n'est pas encore configurée pour autoriser l'accès par WinRM, ce qui cause un timeout (quelle que soit la durée configurée). Pourtant elle est démarrée et utilisable, puisque nous voyons l'interface graphique de Windows.
+        TODO verbatim
 
-La VM n'est pas non plus manipulable avec les commandes Vagrant : `vagrant halt`, `vagrant reload`, etc.
+Pourtant elle est démarrée, puisque nous voyons l'interface graphique de Windows :
 
-Pour régler ça, ouvrez un terminal en tant qu'administrateur dans la VM et lancez ces commandes :
+        TODO capture d'écran
+
+Dans la VM, configurer le réseau en choisissant "home network" :
+
+        TODO screenshot
+
+La VM n'est pas encore manipulable avec les commandes Vagrant, par exemple `vagrant halt`, `vagrant reload` :
+
+        vagrant halt
+        TODO command output
+
+        vagrant reload
+        TODO command output
+
+Pour régler ça, ouvrez un terminal Windows en tant qu'administrateur dans la VM et lancez ces commandes :
 
     powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
     powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
 
-TODO : explications commandes winrm. Voir http://docs.vagrantup.com/v2/vagrantfile/winrm_settings.html.
+Eteignez la VM. Il faut le faire depuis le système invité, car pour l'instant `vagrant reload` est encore impossible.
 
-TODO vagrant reload Ok ?
+### Finalisation
 
-Eteignez la VM depuis le système invité (pour l'instant `vagrant reload` est encore impossible).
-
-Passez `vb.gui` à `false`, pour lancer la VM en _headless_, et le timeout à 5 minutes, pour lui laisser le temps de démarrer (sur mon poste, elle prend 2-3 minutes) :
+Passez `vb.gui` à `false` pour lancer la VM en _headless_, et le timeout à 5 minutes pour lui laisser le temps de démarrer (sur mon poste MacBook Pro 2015, elle prend 2-3 minutes) :
 
     [...]
     # Timeout suffisant pour le démarrage de Windows
@@ -108,18 +118,28 @@ Passez `vb.gui` à `false`, pour lancer la VM en _headless_, et le timeout à 5 
 
 Refaites un `vagrant up` pour tester le démarrage de la VM. Il ne doit pas y avoir de timeout :
 
-    TODO
+    vagrant up
+    TODO command output
 
-TODO : `vagrant rdp`
+Pour valider l'installation, accédez à la VM en local avec le client RDP de Microsoft :
+
+    TODO : `vagrant rdp` + screenshot
 
 ## Distribution
 
-TODO : repackaging, mise à disposition de la box
+Repackagez la box :
+
+    vagrant box repackage NAME PROVIDER VERSION
+    TODO command output
 
 Copiez la box repackagée sur un serveur web accessible à votre équipe :
 
     TODO commande copie
     TODO vérification du fichier
+
+Configurez l'URL d'accès à cette box dans le Vagrantfile :
+
+    TODO
 
 Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
 
