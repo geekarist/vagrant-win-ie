@@ -26,34 +26,34 @@ Nous allons voir comment personnaliser une box Microsoft pour corriger ces probl
 - Vagrant 1.7
 - VirtualBox
 - Un gestionnaire de téléchargement, par exemple la commande `wget`
-- Quelques heures de patience pour télécharger les VM
-- Le client Microsoft Remote Desktop
+- Une bonne connexion internet ou bien quelques heures de patience, pour télécharger les VM
+- Un client Microsoft Remote Desktop (Linux : rdesktop ; Mac : TODO, Windows : TODO)
 
 ## Personnalisation
 
 Téléchargez la box Vagrant : `wget -c http://aka.ms/vagrant-win7-ie11`
 
-La commande `wget -c` peut être relancée pour reprendre le téléchargement en cas d'interruption. C'est très long.
+La commande `wget -c` peut être relancée pour reprendre le téléchargement en cas d'interruption. Ca peut être très long.
 
 Créez votre fichier Vagrantfile :
 
     Vagrant.configure(2) do |config|
+        config.vm.guest = :windows
+        # Configuration de winrm, qui rend la VM scriptable depuis
+        # l'extérieur.
+        config.vm.communicator = "winrm"
+        # Identifiants pour que Vagrant puisse commander la VM
         config.winrm.username = "IEUser"
         config.winrm.password = "Passw0rd!"
-        config.vm.guest = :windows
-        # Configuration de WinRM qui rend la VM scriptable
-        # depuis l'extérieur.
-        config.vm.communicator = "winrm"
-        # Ouverture du port réseau de WinRM
-        config.vm.network :forwarded_port, guest: 5985,
-            host: 59851, id: "winrm", auto_correct:true
+        # Ouverture du port réseau de winrm
+        config.vm.network :forwarded_port, guest: 5985, host: 59851,
+            id: "winrm", auto_correct:true
         # Ouverture du port du remote desktop protocol
-        config.vm.network :forwarded_port, guest: 3389,
-            host: 33891, id: "rdp", auto_correct:true
-        # Chemin de la box qui sera importée au premier
-        # démarrage
+        config.vm.network :forwarded_port, guest: 3389, host: 33891,
+            id: "rdp", auto_correct:true
+        # Chemin de la box qui sera importée au premier démarrage
         config.vm.box_url = "file://vagrant-win7-ie11"
-        # Timeout rapide au premier démarrage
+        # Timeout rapide (30 s) au premier démarrage
         config.vm.boot_timeout = 30
         # Nom de la box
         config.vm.box = "win7-ie11"
@@ -72,38 +72,69 @@ Créez votre fichier Vagrantfile :
 
 Lancez la commande `vagrant up` :
 
-        TODO verbatim
+    $ vagrant up
+    Bringing machine 'default' up with 'virtualbox' provider...
+    ==> default: Importing base box 'win7-ie11'...
+    ==> default: Matching MAC address for NAT networking...
+    ==> default: Setting the name of the VM: vagrant-win-ie_default_1427923643091_51251
+    ==> default: Clearing any previously set network interfaces...
+    ==> default: Preparing network interfaces based on configuration...
+        default: Adapter 1: nat
+    ==> default: Forwarding ports...
+        default: 5985 => 59851 (adapter 1)
+        default: 3389 => 33891 (adapter 1)
+        default: 22 => 2222 (adapter 1)
+    ==> default: Running 'pre-boot' VM customizations...
+    [...]
 
 Vagrant affiche un message de timeout. Pas la peine d'augmenter la valeur dans le Vagrantfile, car il utilise WinRM pour accéder à la machine, et ce n'est pas encore autorisé :
 
-        TODO verbatim
+    [...]
+    ==> default: Booting VM...
+    ==> default: Waiting for machine to boot. This may take a few minutes...
+    Timed out while waiting for the machine to boot. This means that
+    Vagrant was unable to communicate with the guest machine within
+    the configured ("config.vm.boot_timeout" value) time period.
+
+    If you look above, you should be able to see the error(s) that
+    Vagrant had when attempting to connect to the machine. These errors
+    are usually good hints as to what may be wrong.
+
+    If you're using a custom box, make sure that networking is properly
+    working and you're able to connect to the machine. It is a common
+    problem that networking isn't setup properly in these boxes.
+    Verify that authentication configurations are also setup properly,
+    as well.
+
+    If the box appears to be booting properly, you may want to increase
+    the timeout ("config.vm.boot_timeout") value.
 
 Pourtant elle est démarrée, puisque nous voyons l'interface graphique de Windows :
 
-        TODO capture d'écran
+![Ecran Windows](network.png)
 
-Dans la VM, configurer le réseau en choisissant "home network" :
+Configurer le réseau Windows en choisissant "home network".
 
-        TODO screenshot
+La VM n'accepte pas encore les commandes Vagrant, par exemple `vagrant halt`, `vagrant reload` :
 
-La VM n'est pas encore manipulable avec les commandes Vagrant, par exemple `vagrant halt`, `vagrant reload` :
+    $ vagrant halt
+    ==> default: Attempting graceful shutdown of VM...
+    ^C==> default: Waiting for cleanup before exiting...
+    ^C==> default: Exiting immediately, without cleanup!
 
-        vagrant halt
-        TODO command output
-
-        vagrant reload
-        TODO command output
+J'ai fait deux fois Ctrl-C pour interrompre la VM brutalement, mais il faudrait quand même l'éteindre par le menu Démarrer de Windows.
 
 Pour régler ça, ouvrez un terminal Windows en tant qu'administrateur dans la VM et lancez ces commandes :
 
+    winrm quickconfig -q
     powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
     powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
 
-Eteignez la VM. Il faut le faire depuis le système invité, car pour l'instant `vagrant reload` est encore impossible.
+Refaites un `vagrant halt`, ça devrait marcher.
 
 ### Finalisation
 
-Passez `vb.gui` à `false` pour lancer la VM en _headless_, et le timeout à 5 minutes pour lui laisser le temps de démarrer (sur mon poste MacBook Pro 2015, elle prend 2-3 minutes) :
+Passez `vb.gui` à `false` pour lancer la VM en _headless_, et le timeout à 5 minutes pour lui laisser le temps de démarrer (sur mon MacBook Pro 2015, elle prend 2-3 minutes) :
 
     [...]
     # Timeout suffisant pour le démarrage de Windows
@@ -118,14 +149,32 @@ Passez `vb.gui` à `false` pour lancer la VM en _headless_, et le timeout à 5 m
 
 Refaites un `vagrant up` pour tester le démarrage de la VM. Il ne doit pas y avoir de timeout :
 
-    vagrant up
-    TODO command output
+    $ vagrant up
+    Bringing machine 'default' up with 'virtualbox' provider...
+    ==> default: Clearing any previously set forwarded ports...
+    ==> default: Clearing any previously set network interfaces...
+    ==> default: Preparing network interfaces based on configuration...
+        default: Adapter 1: nat
+    ==> default: Forwarding ports...
+        default: 5985 => 59851 (adapter 1)
+        default: 3389 => 33891 (adapter 1)
+        default: 22 => 2222 (adapter 1)
+    ==> default: Running 'pre-boot' VM customizations...
+    ==> default: Booting VM...
+    ==> default: Waiting for machine to boot. This may take a few minutes...
+    ==> default: Machine booted and ready!
+    ==> default: Checking for guest additions in VM...
+        default: The guest additions on this VM do not match the installed version of
+        default: VirtualBox! In most cases this is fine, but in rare cases it can
+        [...]
+    ==> default: Mounting shared folders...
+        default: /vagrant => /home/cp/WORKSPACES/vagrant-win-ie
 
-Pour valider l'installation, accédez à la VM en local avec le client RDP de Microsoft :
+Pour valider l'installation, accédez à la VM en local avec un client RDP grâce à la commande `vagrant rdp` (identifiants : IEUser/Passw0rd!) :
 
-    TODO : `vagrant rdp` + screenshot
+![rdesktop](rdesktop.png)
 
-## Distribution
+## TODO TODO : Distribution
 
 Repackagez la box :
 
