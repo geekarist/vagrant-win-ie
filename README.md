@@ -35,6 +35,8 @@ Téléchargez la box Vagrant : `wget -c http://aka.ms/vagrant-win7-ie11`
 
 La commande `wget -c` peut être relancée pour reprendre le téléchargement en cas d'interruption. Ca peut être très long.
 
+TODO : activer le shared clipboard
+
 Créez votre fichier Vagrantfile :
 
     Vagrant.configure(2) do |config|
@@ -130,7 +132,7 @@ Pour régler ça, ouvrez un terminal Windows en tant qu'administrateur dans la V
     powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
     powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
 
-Refaites un `vagrant halt`, ça devrait marcher.
+Refaites un `vagrant halt`, ça doit marcher.
 
 ### Finalisation
 
@@ -174,37 +176,59 @@ Pour valider l'installation, accédez à la VM en local avec un client RDP grâc
 
 ![rdesktop](rdesktop.png)
 
-## TODO TODO : Distribution
+## Distribution
 
-Repackagez la box :
+Packagez la box :
 
-    vagrant box repackage NAME PROVIDER VERSION
-    TODO command output
+    $ vagrant package
+    ==> default: Clearing any previously set forwarded ports...
+    ==> default: Exporting VM...
+    ==> default: Compressing package to: /[...]/vagrant-win-ie/package.box
 
-Copiez la box repackagée sur un serveur web accessible à votre équipe :
+    $ mv package.box vagrant-win7-ie11-xebia.box
 
-    TODO commande copie
-    TODO vérification du fichier
+Copiez ce fichier sur un serveur accessible à votre équipe, par exemple un serveur SSH :
 
-Configurez l'URL d'accès à cette box dans le Vagrantfile :
+    $ scp vagrant-win7-ie11-xebia.box artel-solutions.com:/tmp
+    $ ssh artel-solutions.com
+    user@artel-solutions$ mv /tmp/vagrant-win7-ie11-xebia.box /var/www
 
-    TODO
+Configurez l'URL d'accès à ce fichier dans le Vagrantfile :
+
+    [...]
+    # Chemin de la box qui sera importée au premier démarrage
+    config.vm.box_url = "http://artel-solutions.com/vagrant-win7-ie11-xebia.box"
+    # Nom de la box
+    config.vm.box = "win7-ie11-xebia"
+    [...]
+
+<!-- BOOKMARK -->
 
 Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
 
     git init
-    git remote add http://github.com/geekarist/vagrant-ie.git
+    # La repository devra aussi être créée du côté du serveur
+    git remote add http://github.com/geekarist/vagrant-win7-ie-xebia.git
     git commit -a -m 'Initial version: custom IE VM'
     git push
 
 ## Utilisation
 
-Clonez la repository où est déployé votre Vagrantfile : `git clone http://github.com/geekarist/vagrant-ie.git`
+Clonez la repository où est déployé votre Vagrantfile :
+
+    git clone http://github.com/geekarist/vagrant-ie.git
 
 Allez dans le nouveau répertoire, et faites un `vagrant up` pour lancer la VM. Vagrant va télécharger la box repackagée et cette fois-ci, il ne doit pas y avoir de timeout.
+
+TODO : curl doit avoir le support ssh : `brew install curl --with-ssl ; brew link curl --force`
 
 Vous pouvez directement manipuler la VM avec Vagrant : `vagrant halt`, `vagrant reload`, etc.
 
 Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance avec le client _remote desktop_ de Microsoft. Si vous avez un iPad sous la main, TODO : RD client sur iPad.
 
-TODO : références (winrm, rdp, doc vagrant, virtualbox)
+Références :
+- http://chase-seibert.github.io/blog/2014/05/18/vagrant-authenticated-private-box-urls.html
+- Conf Vagrant WinRM : TODO
+- Clients rdp : TODO
+- VirtualBox : TODO
+- Doc Vagrant : TODO

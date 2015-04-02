@@ -10,8 +10,8 @@ Vagrant.configure(2) do |config|
         id: "rdp", auto_correct:true
 
     config.vm.boot_timeout = 300
-    config.vm.box_url = "file://vagrant-win7-ie11"
-    config.vm.box = "win7-ie11"
+	config.vm.box_url = "http://artel-solutions.com/vagrant-win7-ie11-xebia.box"
+    config.vm.box = "win7-ie11-xebia"
 
     config.vm.provider "virtualbox" do |vb|
         vb.gui = false
