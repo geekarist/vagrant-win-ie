@@ -202,8 +202,6 @@ Configurez l'URL d'accès à ce fichier dans le Vagrantfile :
     config.vm.box = "win7-ie11-xebia"
     [...]
 
-<!-- BOOKMARK -->
-
 Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
 
     git init
@@ -214,20 +212,18 @@ Déployez votre Vagrantfile sur une repository accessible à votre équipe, par 
 
 ## Utilisation
 
-Clonez la repository où est déployé votre Vagrantfile :
+Clonez la repository où est déployé le Vagrantfile :
 
     git clone http://github.com/geekarist/vagrant-ie.git
 
 Allez dans le nouveau répertoire, et faites un `vagrant up` pour lancer la VM. Vagrant va télécharger la box repackagée et cette fois-ci, il ne doit pas y avoir de timeout.
 
-TODO : curl doit avoir le support ssh : `brew install curl --with-ssl ; brew link curl --force`
+Voilà ! Vous pouvez directement manipuler la VM avec Vagrant : `vagrant halt`, `vagrant reload`, etc.
 
-Vous pouvez directement manipuler la VM avec Vagrant : `vagrant halt`, `vagrant reload`, etc.
-
-Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance avec le client _remote desktop_ de Microsoft. Si vous avez un iPad sous la main, TODO : RD client sur iPad.
+Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance sur le port 33891 avec un client _remote desktop_.
 
 Références :
-- http://chase-seibert.github.io/blog/2014/05/18/vagrant-authenticated-private-box-urls.html
+
 - Conf Vagrant WinRM : TODO
 - Clients rdp : TODO
 - VirtualBox : TODO
