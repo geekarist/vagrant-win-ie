@@ -23,11 +23,11 @@ Nous allons voir comment personnaliser une box Microsoft pour corriger ces probl
 
 ## Pré-requis
 
-- Vagrant 1.7
+- Vagrant 1.7 minimum
 - VirtualBox
 - Un gestionnaire de téléchargement, par exemple la commande `wget`
-- Une bonne connexion internet ou bien quelques heures de patience, pour télécharger les VM
-- Un client Microsoft Remote Desktop (Linux : rdesktop ; Mac : TODO, Windows : TODO)
+- Une bonne connexion internet, ou bien quelques heures de patience, pour télécharger les VM
+- Un client Microsoft Remote Desktop
 
 ## Personnalisation
 
@@ -172,7 +172,7 @@ Refaites un `vagrant up` pour tester le démarrage de la VM. Il ne doit pas y av
     ==> default: Mounting shared folders...
         default: /vagrant => /home/cp/WORKSPACES/vagrant-win-ie
 
-Pour valider l'installation, accédez à la VM en local avec un client RDP grâce à la commande `vagrant rdp` (identifiants : IEUser/Passw0rd!) :
+Pour valider l'installation, accédez à la VM en local avec un client RDP grâce à la commande `vagrant rdp` (identifiants : IEUser/Passw0rd!).
 
 ![rdesktop](rdesktop.png)
 
@@ -224,7 +224,24 @@ Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance sur 
 
 Références :
 
-- Conf Vagrant WinRM : TODO
-- Clients rdp : TODO
-- VirtualBox : TODO
-- Doc Vagrant : TODO
+Cet article est une synthèse de plusieurs sources sur Internet :
+
+- [La page virtualisation sur modern.ie](https://www.modern.ie/en-gb/virtualization-tools#downloads) qui fournit les VM pour VirtualBox
+- [Windows Boxes for Vagrant Courtesy of Modern.ie](http://blog.syntaxc4.net/post/2014/09/03/windows-boxes-for-vagrant-courtesy-of-modern-ie.aspx) qui fournit les VM "brutes" pour Vagrant
+- La page [WinRM Settings
+](http://docs.vagrantup.com/v2/vagrantfile/winrm_settings.html) dans la doc Vagrant, qui donne les lignes de commandes powershell pour débloquer la connection par WinRM
+- TODO Distribution
+- TODO Utilisation
+
+Logiciels :
+
+- Clients RDP :
+    - Linux :
+        - [rdesktop](http://www.rdesktop.org/)
+        - [KDRC](https://www.kde.org/applications/internet/krdc)
+        - [Remmina](http://remmina.sourceforge.net/)
+    - Mac OS X : [Client Connexion Bureau à Distance](http://www.microsoft.com/fr-fr/download/details.aspx?id=18140)
+    - Windows : `mstsc.exe`
+- [VirtualBox](https://www.virtualbox.org/)
+- [Vagrant](https://docs.vagrantup.com)
+- [Wget](http://wget.addictivecode.org/FrequentlyAskedQuestions?action=show&redirect=Faq#download)
