@@ -1,4 +1,4 @@
-# Lancer une VM Windows avec Vagrant
+# Une VM moderne pour IE avec Vagrant
 
 Vagrant est un système de gestion de machines virtuelles qui permet de créer une VM, et de vous y connecter, en quelques lignes de commandes. Par exemple pour la dernière version d'Ubuntu :
 
@@ -15,11 +15,11 @@ D'autres VM avec plusieurs versions de Windows et d'IE ont été mises à dispos
 
 En pratique c'est plus compliqué, car aucun accès à distance n'est configuré par défaut. Pas de SSH, et pas de RDP (le protocole de Microsoft).
 
-- Le premier symptôme est un timeout, au moment où Vagrant essaie de se connecter à la VM pour vérifier qu'elle est bien démarrée.
+- Le premier symptôme est un timeout, au moment où Vagrant essaie de se connecter à la VM pour vérifier qu'elle est bien démarrée
 
-- On ne peut pas non plus manipuler notre VM avec Vagrant, pour éteindre la VM ou pour la redémarrer.
+- On ne peut pas non plus manipuler notre VM avec Vagrant, pour l'éteindre ou pour la redémarrer
 
-Nous allons voir comment personnaliser une box Microsoft pour corriger ces problèmes.
+Nous allons voir comment personnaliser une box Microsoft pour corriger ces problèmes, et comment la redistribuer.
 
 ## Pré-requis
 
@@ -33,9 +33,7 @@ Nous allons voir comment personnaliser une box Microsoft pour corriger ces probl
 
 Téléchargez la box Vagrant : `wget -c http://aka.ms/vagrant-win7-ie11`
 
-La commande `wget -c` peut être relancée pour reprendre le téléchargement en cas d'interruption. Ca peut être très long.
-
-TODO : activer le shared clipboard
+Cette commande peut être relancée pour reprendre le téléchargement en cas d'interruption. Ca peut être très long.
 
 Créez votre fichier Vagrantfile :
 
@@ -67,12 +65,13 @@ Créez votre fichier Vagrantfile :
             vb.gui = true
             # Mémoire vive
             vb.memory = "1024"
-        end
+            # Presse-papiers partagé
+            vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
     end
 
 ### Premier lancement
 
-Lancez la commande `vagrant up` :
+Lancez la commande `vagrant up` pour lancer la VM :
 
     $ vagrant up
     Bringing machine 'default' up with 'virtualbox' provider...
@@ -115,16 +114,14 @@ Pourtant elle est démarrée, puisque nous voyons l'interface graphique de Windo
 
 ![Ecran Windows](network.png)
 
-Configurer le réseau Windows en choisissant "home network".
+Profitez-en pour configurer le réseau Windows en choisissant "home network".
 
-La VM n'accepte pas encore les commandes Vagrant, par exemple `vagrant halt`, `vagrant reload` :
+La VM n'accepte pas encore les commandes Vagrant, par exemple `vagrant halt` :
 
     $ vagrant halt
     ==> default: Attempting graceful shutdown of VM...
     ^C==> default: Waiting for cleanup before exiting...
     ^C==> default: Exiting immediately, without cleanup!
-
-J'ai fait deux fois Ctrl-C pour interrompre la VM brutalement, mais il faudrait quand même l'éteindre par le menu Démarrer de Windows.
 
 Pour régler ça, ouvrez un terminal Windows en tant qu'administrateur dans la VM et lancez ces commandes :
 
@@ -132,11 +129,11 @@ Pour régler ça, ouvrez un terminal Windows en tant qu'administrateur dans la V
     powershell Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value True
     powershell Set-Item WSMan:\localhost\Service\Auth\Basic -Value True
 
-Refaites un `vagrant halt`, ça doit marcher.
+Refaites un `vagrant halt`, ça doit marcher du premier coup.
 
 ### Finalisation
 
-Passez `vb.gui` à `false` pour lancer la VM en _headless_, et le timeout à 5 minutes pour lui laisser le temps de démarrer (sur mon MacBook Pro 2015, elle prend 2-3 minutes) :
+Passez `vb.gui` à `false` pour lancer la VM sans affichage (_headless_), et le timeout à 5 minutes pour lui laisser le temps de démarrer (sur mon MacBook Pro 2015, elle prend 2-3 minutes) :
 
     [...]
     # Timeout suffisant pour le démarrage de Windows
@@ -172,13 +169,13 @@ Refaites un `vagrant up` pour tester le démarrage de la VM. Il ne doit pas y av
     ==> default: Mounting shared folders...
         default: /vagrant => /home/cp/WORKSPACES/vagrant-win-ie
 
-Pour valider l'installation, accédez à la VM en local avec un client RDP grâce à la commande `vagrant rdp` (identifiants : IEUser/Passw0rd!).
+Pour valider l'installation, accédez à la VM en local avec un client RDP grâce à la commande `vagrant rdp` (identifiants par défaut : IEUser/Passw0rd!).
 
 ![rdesktop](rdesktop.png)
 
 ## Distribution
 
-Packagez la box :
+Maintenant que la VM est finalisée, preparez un paquet pour la box :
 
     $ vagrant package
     ==> default: Clearing any previously set forwarded ports...
@@ -187,34 +184,33 @@ Packagez la box :
 
     $ mv package.box vagrant-win7-ie11-xebia.box
 
-Copiez ce fichier sur un serveur accessible à votre équipe, par exemple un serveur SSH :
+Copiez ce fichier sur un serveur accessible à votre équipe, comme un serveur Web :
 
-    $ scp vagrant-win7-ie11-xebia.box artel-solutions.com:/tmp
-    $ ssh artel-solutions.com
-    user@artel-solutions$ mv /tmp/vagrant-win7-ie11-xebia.box /var/www
+    $ scp vagrant-win7-ie11-xebia.box un-serveur.xebia.com:/tmp
+    $ ssh un-serveur.xebia.com
+    user@un-serveur.xebia$ mv /tmp/vagrant-win7-ie11-xebia.box /var/www
 
 Configurez l'URL d'accès à ce fichier dans le Vagrantfile :
 
     [...]
     # Chemin de la box qui sera importée au premier démarrage
-    config.vm.box_url = "http://artel-solutions.com/vagrant-win7-ie11-xebia.box"
+    config.vm.box_url = "http://un-serveur.xebia.com/vagrant-win7-ie11-xebia.box"
     # Nom de la box
     config.vm.box = "win7-ie11-xebia"
     [...]
 
-Déployez votre Vagrantfile sur une repository accessible à votre équipe, par exemple Git :
+Déployez votre Vagrantfile sur une repository accessible à votre équipe, avec Git par exemple :
 
     git init
-    # La repository devra aussi être créée du côté du serveur
-    git remote add http://github.com/geekarist/vagrant-win7-ie-xebia.git
+    git remote add http://un-serveur.xebia.com/vagrant-win7-ie-xebia.git
     git commit -a -m 'Initial version: custom IE VM'
     git push
 
 ## Utilisation
 
-Clonez la repository où est déployé le Vagrantfile :
+Clonez la repository où vous avez déployé le Vagrantfile :
 
-    git clone http://github.com/geekarist/vagrant-ie.git
+    git clone http://un-serveur.xebia.com/vagrant-win7-ie-xebia.git
 
 Allez dans le nouveau répertoire, et faites un `vagrant up` pour lancer la VM. Vagrant va télécharger la box repackagée et cette fois-ci, il ne doit pas y avoir de timeout.
 
@@ -222,16 +218,13 @@ Voilà ! Vous pouvez directement manipuler la VM avec Vagrant : `vagrant halt`, 
 
 Vous pouvez vous y connecter en local avec un `vagrant rdp`, ou à distance sur le port 33891 avec un client _remote desktop_.
 
-Références :
+## Références
 
 Cet article est une synthèse de plusieurs sources sur Internet :
 
-- [La page virtualisation sur modern.ie](https://www.modern.ie/en-gb/virtualization-tools#downloads) qui fournit les VM pour VirtualBox
-- [Windows Boxes for Vagrant Courtesy of Modern.ie](http://blog.syntaxc4.net/post/2014/09/03/windows-boxes-for-vagrant-courtesy-of-modern-ie.aspx) qui fournit les VM "brutes" pour Vagrant
-- La page [WinRM Settings
-](http://docs.vagrantup.com/v2/vagrantfile/winrm_settings.html) dans la doc Vagrant, qui donne les lignes de commandes powershell pour débloquer la connection par WinRM
-- TODO Distribution
-- TODO Utilisation
+- [La page virtualisation sur modern.ie](https://www.modern.ie/en-gb/virtualization-tools#downloads), qui fournit les VM pour VirtualBox
+- [Windows Boxes for Vagrant Courtesy of Modern.ie](http://blog.syntaxc4.net/post/2014/09/03/windows-boxes-for-vagrant-courtesy-of-modern-ie.aspx), qui fournit les VM "brutes" pour Vagrant
+- La page [Vagrantfile WinRM Settings](http://docs.vagrantup.com/v2/vagrantfile/winrm_settings.html), qui donne les lignes de commandes PowerShell pour débloquer la connection par WinRM
 
 Logiciels :
 
